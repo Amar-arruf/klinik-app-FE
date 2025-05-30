@@ -25,7 +25,7 @@ export default function EmployeeTableList({ data }) {
                 </td>
                 <td>
                   <button className="btn btn-primary rounded-circle ms-2 me-3">
-                    <i className="bi bi-arrow-right text-light"></i>
+                    <i className="bi bi-arrow-right text-light fw-bold"></i>
                   </button>
                 </td>
               </tr>
@@ -51,7 +51,7 @@ export default function EmployeeTableList({ data }) {
                 </div>
             </div>
             <button className="btn btn-primary rounded-circle ms-2 me-3">
-              <i className="bi bi-arrow-right text-light"></i>
+              <i className="bi bi-arrow-right text-light fw-bold"></i>
             </button>
           </div>
         ))}
