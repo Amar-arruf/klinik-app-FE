@@ -1,0 +1,48 @@
+.status-tabs {
+    border-radius: 8px;
+    border: none;  // this is already set to none
+    background: #d6d6d6;
+    .tab-btn {
+        border: none;  // this is already set to none
+        background: #e6e4e4;
+        color: #888;
+        font-weight: 500;
+        padding: 8px 0;
+        border-radius: 6px;
+        transition: background 0.2s, color 0.2s;
+        &.active {
+            margin: 10px 6px;
+            border: none;
+            background: #fff;
+            color: #111;
+            font-weight: 700;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+            
+        }
+        &:not(:last-child) {
+            margin-right: 4px;
+        }
+    }
+}
+
+.bg-status {
+    background: #e6e4e4;
+    border-radius: 8px;
+}
+
+.employee-table-list {
+  .employee-card {
+    border: 1px solid #f0f0f0;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+    transition: box-shadow 0.2s;
+    &:hover {
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .fw-bold {
+      font-size: 1rem;
+    }
+    .badge {
+      font-size: 0.8rem;
+    }
+  }
+}
