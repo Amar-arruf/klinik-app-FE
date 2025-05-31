@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -63,6 +63,30 @@ export default function EmployeeForm({ initial = {}, onSuccess, isEditMode = fal
     resolver: yupResolver(schema),
   });
 
+const [avatar, setAvatar] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(initial?.avatar_url || '');
+  const fileInputRef = useRef(null);
+
+  // Handle file selection
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setAvatar(file);
+      
+      // Create preview URL
+      const fileReader = new FileReader();
+      fileReader.onload = () => {
+        setPreviewUrl(fileReader.result);
+      };
+      fileReader.readAsDataURL(file);
+    }
+  };
+  
+  // Handle click on avatar placeholder or image
+  const handleAvatarClick = () => {
+    fileInputRef.current.click();
+  };
+
   // Effect untuk mengupdate form ketika initial berubah
   useEffect(() => {
     if (initial && Object.keys(initial).length > 0) {
@@ -90,6 +114,12 @@ export default function EmployeeForm({ initial = {}, onSuccess, isEditMode = fal
         status_menikah: initial.User?.status_menikah || '',
         kode_dokter_bpjs: initial.User?.kode_dokter_bpjs || '',
       });
+
+      // Set preview URL if avatar_url exists in initial data
+      if (initial.avatar_url) {
+        setPreviewUrl(initial.avatar_url);
+      }
+
     } else {
       // Reset form ke nilai default jika tidak ada initial data
       reset({
@@ -101,33 +131,129 @@ export default function EmployeeForm({ initial = {}, onSuccess, isEditMode = fal
     }
   }, [initial, reset, isEditMode]);
   const tipeRadio = watch('tipeRadio');
-  const tipe = watch('tipe');
 
   const onSubmit = async (data) => {
-    // Gabungkan tipe dari checkbox dan radio menjadi    
-    let tipeFinal = Array.isArray(data.tipe) ? data.tipe.join(',') : '';
-    if (data.tipeRadio) {
-      const radioValue = data.tipeRadio === 'lainnya' ? data.tipeLainnya : data.tipeRadio;
+  // Fix tipe formatting
+  let tipeFinal = '';
+  
+  // Handle checkbox values (tipe array)
+  if (Array.isArray(data.tipe) && data.tipe.length > 0) {
+    tipeFinal = data.tipe.join(',');
+  }
+  
+  // Add radio value if selected
+  if (data.tipeRadio) {
+    const radioValue = data.tipeRadio === 'lainnya' ? data.tipeLainnya : data.tipeRadio;
+    if (radioValue) {
       tipeFinal = tipeFinal ? `${tipeFinal},${radioValue}` : radioValue;
     }
-    const payload = { ...data, tipe: tipeFinal };
-    try {
-      if (isEditMode) {
-          await api.put(`/users/${initial.id}`, payload);
-          window.alert('Data berhasil diupdate');
-          reset(); // Reset form setelah update
-          window.location.reload(); // Reload halaman untuk melihat perubahan
-          return ;
-      } 
-
-    } catch (err) {
-      alert(err.response?.data?.message || 'Gagal menyimpan data');
+  }
+  
+  // Create FormData for file upload
+  const formData = new FormData();
+  
+  // Append form fields to formData (excluding tipe which we'll handle separately)
+  Object.keys(data).forEach(key => {
+    if (key !== 'tipe' && key !== 'tipeRadio' && key !== 'tipeLainnya') {
+      formData.append(key, data[key]);
     }
-  };
+  });
+  
+  // Add the avatar file if selected
+  if (avatar) {
+    formData.append('avatar', avatar);
+  }
+  
+  // Add the formatted tipe string
+  formData.append('tipe', tipeFinal);
+  
+  try {
+    if (isEditMode) {
+      await api.put(`/users/${initial.id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      window.alert('Data berhasil diupdate');
+      reset();
+      window.location.reload();
+      return;
+    } else {
+      await api.post('/users', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      }); 
+      window.alert('Data berhasil disimpan');
+      reset();
+      window.location.reload();
+    }
+  } catch (err) {
+    console.error('Error submitting form:', err);
+    alert(err.response?.data?.message || 'Gagal menyimpan data');
+  }
+};
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <h5 className="fw-bold mb-4">{isEditMode ? 'FORM EDIT KARYAWAN' : 'FORM TAMBAH KARYAWAN'}</h5>
+      {/* Avatar upload section */}
+      <div className="row mb-4">
+        <div className="col-md-12 d-flex justify-content-center">
+          <div className="avatar-upload">
+            <div 
+              className="avatar-preview" 
+              onClick={handleAvatarClick}
+              style={{ 
+                cursor: 'pointer',
+                width: '150px',
+                height: '150px',
+                borderRadius: '50%',
+                border: '2px dashed #ccc',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden',
+                position: 'relative'
+              }}
+            >
+              {previewUrl ? (
+                <img 
+                  src={previewUrl} 
+                  alt="Avatar preview" 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <div className="text-center text-muted">
+                  <i className="bi bi-person-circle" style={{ fontSize: '3rem' }}></i>
+                  <p className="mt-2 mb-0 small">upload foto</p>
+                </div>
+              )}
+            </div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept="image/*"
+              style={{ display: 'none' }}
+            />
+            {previewUrl && (
+              <div className="text-center mt-2">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-danger"
+                  onClick={() => {
+                    setAvatar(null);
+                    setPreviewUrl('');
+                  }}
+                >
+                  Hapus Foto
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
       <div className="row">
         {/* Kiri */}
         <div className="col-md-6">
