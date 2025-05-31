@@ -2,14 +2,10 @@ import React, { useState } from 'react';
 import Card from '../components/UI/Card';
 import StatusTabs from '../components/UI/StatusTabs';
 import EmployeeTableList from '../components/UI/EmployeeTableList';
+import { useEffect } from 'react';
+import { getUsers } from '../utils/api';
 
-const dummyData = [
-  { id: 1, name: 'Guntoro Putra Wibowo', role: 'Perawat', status: 'Aktif' },
-  { id: 2, name: 'asadsad', role: 'Lainnya', status: 'Aktif' },
-  { id: 3, name: 'as@as!1', role: 'Lainnya', status: 'Aktif' },
-  { id: 4, name: 'Fifi Cantik', role: 'Perawat', status: 'Aktif' },
-  { id: 5, name: 'Kemei Alkaline', role: 'Lainnya', status: 'Aktif' },
-];
+
 
 const roles = ['Semua Karyawan', 'Perawat', 'Lainnya'];
 
@@ -17,8 +13,30 @@ export default function EmployeeTable() {
   const [search, setSearch] = useState('');
   const [role, setRole] = useState('Semua Karyawan');
   const [status, setStatus] = useState('AKTIF');
+  const [employees, setEmployees] = useState([]);
 
-  const filtered = dummyData.filter(
+  useEffect(() => {
+  const fetchEmployees = async () => {
+    try {
+      const { data: users } = await getUsers();
+      console.log('Fetched employees:', users);
+      const data = users.map(user => ({
+        id: user.id,
+        name: user.nama_lengkap,
+        role: user.User.tipe.toLowerCase() === 'perawat' ? 'Perawat' : 'Lainnya',
+        status: user.User.status_menikah.toLowerCase() === 'menikah' ? 'AKTIF' : 'TIDAK AKTIF',
+        avatar: user.User.avatar || 'default-avatar.png', // Ganti dengan avatar default jika tidak ada
+      }));
+      setEmployees(data);
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+    }
+  };
+
+  fetchEmployees();
+}, []);
+
+  const filtered = employees.filter(
     (d) =>
         (role === 'Semua Karyawan' || d.role === role) &&
         (status === 'SEMUA' || d.status.toUpperCase() === status) &&
