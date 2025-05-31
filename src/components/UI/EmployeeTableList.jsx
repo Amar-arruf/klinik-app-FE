@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 
-export default function EmployeeTableList({ data }) {
+export default function EmployeeTableList({ data, onEdit, selectedId }) {
   const containerRef = useRef(null);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -14,6 +14,12 @@ export default function EmployeeTableList({ data }) {
     window.addEventListener('resize', checkWidth);
     return () => window.removeEventListener('resize', checkWidth);
   }, []);
+
+  const handleEdit = (employee) => {
+    if (onEdit) {
+      onEdit(employee);
+    }
+  };
 
   return (
     <div className="employee-table-list" ref={containerRef}>
@@ -39,7 +45,9 @@ export default function EmployeeTableList({ data }) {
                     <span className="badge bg-success">{d.status}</span>
                   </td>
                   <td>
-                    <button className="btn btn-primary rounded-circle ms-2 me-3">
+                    <button className="btn btn-primary rounded-circle ms-2 me-3"
+                      onClick={() => handleEdit(d)}
+                    >
                       <i className="bi bi-arrow-right text-light fw-bold"></i>
                     </button>
                   </td>
@@ -66,7 +74,9 @@ export default function EmployeeTableList({ data }) {
                   <span className="badge bg-success mt-1">{d.status}</span>
                 </div>
               </div>
-              <button className="btn btn-primary rounded-circle ms-2 me-3">
+              <button className="btn btn-primary rounded-circle ms-2 me-3"
+                onClick={() => handleEdit(d)}
+              >
                 <i className="bi bi-arrow-right text-light fw-bold"></i>
               </button>
             </div>

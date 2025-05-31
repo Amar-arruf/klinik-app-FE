@@ -2,40 +2,16 @@ import React, { useState } from 'react';
 import Card from '../components/UI/Card';
 import StatusTabs from '../components/UI/StatusTabs';
 import EmployeeTableList from '../components/UI/EmployeeTableList';
-import { useEffect } from 'react';
-import { getUsers } from '../utils/api';
 
 
 
 const roles = ['Semua Karyawan', 'Perawat', 'Lainnya'];
 
-export default function EmployeeTable() {
+export default function EmployeeTable({ employees = [], isLoading, onEditEmployee, selectedEmployeeId }) {
   const [search, setSearch] = useState('');
   const [role, setRole] = useState('Semua Karyawan');
   const [status, setStatus] = useState('AKTIF');
-  const [employees, setEmployees] = useState([]);
-
-  useEffect(() => {
-  const fetchEmployees = async () => {
-    try {
-      const { data: users } = await getUsers();
-      console.log('Fetched employees:', users);
-      const data = users.map(user => ({
-        id: user.id,
-        name: user.nama_lengkap,
-        role: user.User.tipe.toLowerCase() === 'perawat' ? 'Perawat' : 'Lainnya',
-        status: user.User.status_menikah.toLowerCase() === 'menikah' ? 'AKTIF' : 'TIDAK AKTIF',
-        avatar: user.User.avatar || 'default-avatar.png', // Ganti dengan avatar default jika tidak ada
-      }));
-      setEmployees(data);
-    } catch (error) {
-      console.error('Error fetching employees:', error);
-    }
-  };
-
-  fetchEmployees();
-}, []);
-
+  
   const filtered = employees.filter(
     (d) =>
         (role === 'Semua Karyawan' || d.role === role) &&
@@ -80,7 +56,19 @@ export default function EmployeeTable() {
           </div>
         </div>
         <div className="table-responsive" style={{minHeight: 300}}>
-           <EmployeeTableList data={filtered} />
+           {isLoading ? (
+            <div className="text-center py-4">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            </div>
+            ) : (
+              <EmployeeTableList 
+                data={filtered} 
+                onEdit={onEditEmployee}
+                selectedId={selectedEmployeeId} 
+              />
+            )}
         </div>
     </Card>
   );

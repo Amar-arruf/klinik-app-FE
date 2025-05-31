@@ -1,4 +1,16 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
+import api from '../../utils/api';
+
+// Perbaikan schema Yup (sesuaikan dengan nama field di useForm)
+const schema = yup.object().shape({
+  nama_lengkap: yup.string().required('Nama wajib diisi'),
+  username: yup.string().required('Username wajib diisi'),
+  password: yup.string().required('Password wajib diisi'),
+  // Tambahkan validasi lain sesuai kebutuhan
+});
 
 const tipeList = [
   { label: 'Manager', value: 'manager', group: 'left' },
@@ -14,108 +26,160 @@ const tipeList = [
   { label: 'Lainnya', value: 'lainnya', group: 'right' },
 ];
 
-export default function EmployeeForm({ initial = {},}) {
-  const [form, setForm] = useState({
-    nama: initial.nama || '',
-    nik: initial.nik || '',
-    gender: initial.gender || '',
-    tempatLahir: initial.tempatLahir || '',
-    tanggalLahir: initial.tanggalLahir || '',
-    telepon: initial.telepon || '',
-    provinsi: initial.provinsi || '',
-    kota: initial.kota || '',
-    kecamatan: initial.kecamatan || '',
-    kelurahan: initial.kelurahan || '',
-    alamat: initial.alamat || '',
-    username: initial.username || '',
-    email: initial.email || '',
-    password: '',
-    tipe: initial.tipe || [],
-    tipeRadio: initial.tipeRadio || '',
-    tipeLainnya: initial.tipeLainnya || '',
-    mulaiKontrak: initial.mulaiKontrak || '',
-    selesaiKontrak: initial.selesaiKontrak || '',
-    statusMenikah: initial.statusMenikah || '',
-    kodeBpjs: initial.kodeBpjs || '',
+export default function EmployeeForm({ initial = {}, onSuccess, isEditMode = false }) {
+  // Setup form awal
+  const {
+    register,
+    handleSubmit,
+    control,
+    setValue,
+    watch,
+    formState: { errors, isSubmitting },
+    reset,
+  } = useForm({
+    defaultValues: {
+      nama_lengkap: '',
+      no_kartu_identitas: '',
+      jenis_kelamin: '',
+      tempat_lahir: '',
+      tanggal_lahir: '',
+      no_telepon: '',
+      provinsi: '',
+      kota: '',
+      kecamatan: '',
+      kelurahan: '',
+      alamat: '',
+      username: '',
+      email: '',
+      password: '',
+      tipe: [],
+      tipeRadio: '',
+      tipeLainnya: '',
+      tgl_mulai_kontrak: '',
+      tgl_selesai_kontrak: '',
+      status_menikah: '',
+      kode_dokter_bpjs: '',
+    },
+    resolver: yupResolver(schema),
   });
 
-  const handleChange = e => {
-    const { name, value, type, checked } = e.target;
-    if (type === 'checkbox') {
-      setForm(f => ({
-        ...f,
-        tipe: checked
-          ? [...f.tipe, value]
-          : f.tipe.filter(v => v !== value),
-      }));
-    } else if (name === 'tipeRadio') {
-      setForm(f => ({
-        ...f,
-        tipeRadio: value,
-        tipeLainnya: value === 'lainnya' ? f.tipeLainnya : '',
-      }));
+  // Effect untuk mengupdate form ketika initial berubah
+  useEffect(() => {
+    if (initial && Object.keys(initial).length > 0) {
+      // Reset form dengan nilai initial baru
+      reset({
+        nama_lengkap: initial.nama_lengkap || '',
+        no_kartu_identitas: initial.no_kartu_identitas || '',
+        jenis_kelamin: initial.jenis_kelamin || '',
+        tempat_lahir: initial.tempat_lahir || '',
+        tanggal_lahir: initial.tanggal_lahir || '',
+        no_telepon: initial.no_telepon || '',
+        provinsi: initial.provinsi || '',
+        kota: initial.kota || '',
+        kecamatan: initial.kecamatan || '',
+        kelurahan: initial.kelurahan || '',
+        alamat: initial.alamat || '',
+        username: initial.User?.username || '',
+        email: initial.User?.email || '',
+        password: isEditMode ? '' : '', // Password kosong saat edit
+        tipe: initial.User?.tipe || [],
+        tipeRadio: initial.tipeRadio || '',
+        tipeLainnya: initial.tipeLainnya || '',
+        tgl_mulai_kontrak: initial.User?.tgl_mulai_kontrak || '',
+        tgl_selesai_kontrak: initial.User?.tgl_selesai_kontrak || '',
+        status_menikah: initial.User?.status_menikah || '',
+        kode_dokter_bpjs: initial.User?.kode_dokter_bpjs || '',
+      });
     } else {
-      setForm(f => ({ ...f, [name]: value }));
+      // Reset form ke nilai default jika tidak ada initial data
+      reset({
+        nama_lengkap: '',
+        no_kartu_identitas: '',
+        jenis_kelamin: '',
+        // ...sisanya kosong
+      });
+    }
+  }, [initial, reset, isEditMode]);
+  const tipeRadio = watch('tipeRadio');
+  const tipe = watch('tipe');
+
+  const onSubmit = async (data) => {
+    // Gabungkan tipe dari checkbox dan radio menjadi    
+    let tipeFinal = Array.isArray(data.tipe) ? data.tipe.join(',') : '';
+    if (data.tipeRadio) {
+      const radioValue = data.tipeRadio === 'lainnya' ? data.tipeLainnya : data.tipeRadio;
+      tipeFinal = tipeFinal ? `${tipeFinal},${radioValue}` : radioValue;
+    }
+    const payload = { ...data, tipe: tipeFinal };
+    try {
+      if (isEditMode) {
+          await api.put(`/users/${initial.id}`, payload);
+          window.alert('Data berhasil diupdate');
+          reset(); // Reset form setelah update
+          window.location.reload(); // Reload halaman untuk melihat perubahan
+          return ;
+      } 
+
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menyimpan data');
     }
   };
 
-
-  const handleSubmit = e => {
-    e.preventDefault();
-    // Validasi form jika diperlukan
-    // Simpan data karyawan
-  };
-
   return (
-    <form onSubmit={handleSubmit}>
-      <h5 className="fw-bold mb-4">FORM TAMBAH KARYAWAN</h5>
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <h5 className="fw-bold mb-4">{isEditMode ? 'FORM EDIT KARYAWAN' : 'FORM TAMBAH KARYAWAN'}</h5>
       <div className="row">
         {/* Kiri */}
         <div className="col-md-6">
           <div className="mb-3">
             <label className="form-label fw-semibold">Nama Lengkap *</label>
-            <input type="text" className="form-control" name="nama" value={form.nama} onChange={handleChange} required />
+            <input {...register('nama_lengkap')} type="text" className={`form-control ${errors.nama_lengkap ? 'is-invalid' : ''}`} />
+            {errors.nama_lengkap && <div className="invalid-feedback">{errors.nama_lengkap.message}</div>}
           </div>
           <div className="mb-3">
             <label className="form-label fw-semibold">No. Kartu Identitas <span className="text-muted small">(Nomor induk Kependudukan)</span></label>
-            <input type="text" className="form-control" name="nik" value={form.nik} onChange={handleChange} />
+            <input {...register('no_kartu_identitas')} type="text" className={`form-control ${errors.no_kartu_identitas ? 'is-invalid' : ''}`} />
+            {errors.no_kartu_identitas && <div className="invalid-feedback">{errors.no_kartu_identitas.message}</div>}
           </div>
           <div className="mb-3">
             <label className="form-label fw-semibold">Jenis Kelamin</label>
             <div>
               <div className="form-check form-check-inline">
-                <input className="form-check-input" type="radio" name="gender" value="Laki-laki" checked={form.gender === 'Laki-laki'} onChange={handleChange} />
+                <input {...register('jenis_kelamin')} type="radio" className="form-check-input" value="Laki-laki" />
                 <label className="form-check-label">Laki-laki</label>
               </div>
               <div className="form-check form-check-inline">
-                <input className="form-check-input" type="radio" name="gender" value="Perempuan" checked={form.gender === 'Perempuan'} onChange={handleChange} />
+                <input {...register('jenis_kelamin')} type="radio" className="form-check-input" value="Perempuan" />
                 <label className="form-check-label">Perempuan</label>
               </div>
             </div>
           </div>
           <div className="mb-3">
             <label className="form-label fw-semibold">Tempat Lahir</label>
-            <input type="text" className="form-control" name="tempatLahir" value={form.tempatLahir} onChange={handleChange} />
+            <input {...register('tempat_lahir')} type="text" className={`form-control ${errors.tempat_lahir ? 'is-invalid' : ''}`} />
+            {errors.tempat_lahir && <div className="invalid-feedback">{errors.tempat_lahir.message}</div>}
           </div>
           <div className="mb-3">
             <label className="form-label fw-semibold">Tanggal Lahir</label>
-            <input type="date" className="form-control" name="tanggalLahir" value={form.tanggalLahir} onChange={handleChange} />
+            <input {...register('tanggal_lahir')} type="date" className={`form-control ${errors.tanggal_lahir ? 'is-invalid' : ''}`} />
+            {errors.tanggal_lahir && <div className="invalid-feedback">{errors.tanggal_lahir.message}</div>}
           </div>
           <div className="mb-3">
             <label className="form-label fw-semibold">No. Telepon</label>
-            <input type="text" className="form-control" name="telepon" value={form.telepon} onChange={handleChange} />
+            <input {...register('no_telepon')} type="text" className={`form-control ${errors.no_telepon ? 'is-invalid' : ''}`} />
+            {errors.no_telepon && <div className="invalid-feedback">{errors.no_telepon.message}</div>}
           </div>
           <div className="row mb-3">
             <div className="col-6">
               <label className="form-label fw-semibold">Provinsi</label>
-              <select className="form-select" name="provinsi" value={form.provinsi} onChange={handleChange}>
+              <select {...register('provinsi')} className={`form-select ${errors.provinsi ? 'is-invalid' : ''}`}>
                 <option value="">Pilih Provinsi</option>
                 {/* Tambahkan opsi provinsi */}
               </select>
             </div>
             <div className="col-6">
               <label className="form-label fw-semibold">Kota / Kabupaten</label>
-              <select className="form-select" name="kota" value={form.kota} onChange={handleChange}>
+              <select {...register('kota')} className={`form-select ${errors.kota ? 'is-invalid' : ''}`}>
                 <option value="">Pilih Kota/Kabupaten</option>
                 {/* Tambahkan opsi kota */}
               </select>
@@ -124,14 +188,14 @@ export default function EmployeeForm({ initial = {},}) {
           <div className="row mb-3">
             <div className="col-6">
               <label className="form-label fw-semibold">Kecamatan</label>
-              <select className="form-select" name="kecamatan" value={form.kecamatan} onChange={handleChange}>
+              <select {...register('kecamatan')} className={`form-select ${errors.kecamatan ? 'is-invalid' : ''}`}>
                 <option value="">Pilih Kecamatan</option>
                 {/* Tambahkan opsi kecamatan */}
               </select>
             </div>
             <div className="col-6">
               <label className="form-label fw-semibold">Kelurahan</label>
-              <select className="form-select" name="kelurahan" value={form.kelurahan} onChange={handleChange}>
+              <select {...register('kelurahan')} className={`form-select ${errors.kelurahan ? 'is-invalid' : ''}`}>
                 <option value="">Pilih Kelurahan</option>
                 {/* Tambahkan opsi kelurahan */}
               </select>
@@ -139,22 +203,26 @@ export default function EmployeeForm({ initial = {},}) {
           </div>
           <div className="mb-3">
             <label className="form-label fw-semibold">Detil Alamat</label>
-            <textarea className="form-control" name="alamat" value={form.alamat} onChange={handleChange} rows={2} />
+            <textarea {...register('alamat')} className={`form-control ${errors.alamat ? 'is-invalid' : ''}`} rows={2} />
+            {errors.alamat && <div className="invalid-feedback">{errors.alamat.message}</div>}
           </div>
         </div>
         {/* Kanan */}
         <div className="col-md-6">
           <div className="mb-3">
             <label className="form-label fw-semibold">Username *</label>
-            <input type="text" className="form-control" name="username" value={form.username} onChange={handleChange} required />
+            <input {...register('username')} type="text" className={`form-control ${errors.username ? 'is-invalid' : ''}`} />
+            {errors.username && <div className="invalid-feedback">{errors.username.message}</div>}
           </div>
           <div className="mb-3">
             <label className="form-label fw-semibold">Email</label>
-            <input type="email" className="form-control" name="email" value={form.email} onChange={handleChange} />
+            <input {...register('email')} type="email" className={`form-control ${errors.email ? 'is-invalid' : ''}`} />
+            {errors.email && <div className="invalid-feedback">{errors.email.message}</div>}
           </div>
           <div className="mb-3">
             <label className="form-label fw-semibold">Password *</label>
-            <input type="password" className="form-control" name="password" value={form.password} onChange={handleChange} required />
+            <input {...register('password')} type="password" className={`form-control ${errors.password ? 'is-invalid' : ''}`} />
+            {errors.password && <div className="invalid-feedback">{errors.password.message}</div>}
           </div>
           <div className="mb-3">
             <label className="form-label fw-semibold">Tipe *</label>
@@ -163,12 +231,10 @@ export default function EmployeeForm({ initial = {},}) {
                 {tipeList.filter(t => t.group === 'left').map(t => (
                   <div className="form-check" key={t.value}>
                     <input
-                      className="form-check-input"
+                      {...register('tipe')}
                       type="checkbox"
-                      name="tipe"
                       value={t.value}
-                      checked={form.tipe.includes(t.value)}
-                      onChange={handleChange}
+                      className="form-check-input"
                     />
                     <label className="form-check-label">{t.label}</label>
                   </div>
@@ -178,12 +244,10 @@ export default function EmployeeForm({ initial = {},}) {
                 {tipeList.filter(t => t.group === 'right' && t.value !== 'lainnya').map(t => (
                   <div className="form-check" key={t.value}>
                     <input
-                      className="form-check-input"
+                      {...register('tipeRadio')}
                       type="radio"
-                      name="tipeRadio"
                       value={t.value}
-                      checked={form.tipeRadio === t.value}
-                      onChange={handleChange}
+                      className="form-check-input"
                     />
                     <label className="form-check-label">{t.label}</label>
                   </div>
@@ -191,22 +255,18 @@ export default function EmployeeForm({ initial = {},}) {
                 {/* Lainnya */}
                 <div className="form-check d-flex align-items-center">
                   <input
-                    className="form-check-input"
+                    {...register('tipeRadio')}
                     type="radio"
-                    name="tipeRadio"
                     value="lainnya"
-                    checked={form.tipeRadio === 'lainnya'}
-                    onChange={handleChange}
+                    className="form-check-input"
                   />
                   <label className="form-check-label me-2">Lainnya</label>
                   <input
+                    {...register('tipeLainnya')}
                     type="text"
                     className="form-control form-control-sm"
                     placeholder="Lainnya"
-                    name="tipeLainnya"
-                    value={form.tipeLainnya}
-                    onChange={handleChange}
-                    disabled={form.tipeRadio !== 'lainnya'}
+                    disabled={tipeRadio !== 'lainnya'}
                     style={{ maxWidth: 120 }}
                   />
                 </div>
@@ -216,16 +276,16 @@ export default function EmployeeForm({ initial = {},}) {
           <div className="mb-3 row">
             <div className="col-6">
               <label className="form-label fw-semibold">Tanggal Mulai Kontrak</label>
-              <input type="date" className="form-control" name="mulaiKontrak" value={form.mulaiKontrak} onChange={handleChange} />
+              <input {...register('tgl_mulai_kontrak')} type="date" className={`form-control ${errors.tgl_mulai_kontrak ? 'is-invalid' : ''}`} />
             </div>
             <div className="col-6">
               <label className="form-label fw-semibold">Tanggal Selesai Kontrak</label>
-              <input type="date" className="form-control" name="selesaiKontrak" value={form.selesaiKontrak} onChange={handleChange} />
+              <input {...register('tgl_selesai_kontrak')} type="date" className={`form-control ${errors.tgl_selesai_kontrak ? 'is-invalid' : ''}`} />
             </div>
           </div>
           <div className="mb-3">
             <label className="form-label fw-semibold">Status Menikah</label>
-            <select className="form-select" name="statusMenikah" value={form.statusMenikah} onChange={handleChange}>
+            <select {...register('status_menikah')} className={`form-select ${errors.status_menikah ? 'is-invalid' : ''}`}>
               <option value="">Pilih Status</option>
               <option value="Menikah">Menikah</option>
               <option value="Belum Menikah">Belum Menikah</option>
@@ -233,7 +293,7 @@ export default function EmployeeForm({ initial = {},}) {
           </div>
           <div className="mb-3">
             <label className="form-label fw-semibold">Kode Dokter BPJS</label>
-            <select className="form-select" name="kodeBpjs" value={form.kodeBpjs} onChange={handleChange}>
+            <select {...register('kode_dokter_bpjs')} className={`form-select ${errors.kode_dokter_bpjs ? 'is-invalid' : ''}`}>
               <option value="">Pilih Kode Dokter</option>
               {/* Tambahkan opsi kode dokter */}
             </select>
@@ -241,7 +301,9 @@ export default function EmployeeForm({ initial = {},}) {
         </div>
       </div>
       <div className="d-flex justify-content-end mt-4">
-        <button type="submit" className="btn btn-primary px-4">Simpan</button>
+        <button type="submit" className="btn btn-primary px-4" disabled={isSubmitting}>
+          {isSubmitting ? 'Menyimpan...' : 'Simpan'}
+        </button>
       </div>
     </form>
   );
