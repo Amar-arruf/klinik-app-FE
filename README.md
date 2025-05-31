@@ -1,12 +1,29 @@
-# React + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# Klinik App
+## Overview
+Klinik App adalah aplikasi manajemen klinik yang memungkinkan pengelolaan karyawan, pasien, jadwal dokter, dan pelayanan medis. Aplikasi ini terdiri dari frontend dan backend yang terpisah untuk memastikan skalabilitas dan pemeliharaan yang lebih baik.
 
-Currently, two official plugins are available:
+## Tech Stack
+### Frontend
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **React**: Library JavaScript untuk membangun antarmuka pengguna
+- **React Router**: Untuk navigasi di sisi klien
+- **Bootstrap 5**: Framework CSS untuk desain responsif
+- **React Hook Form**: Untuk manajemen dan validasi form
+- **Yup**: Untuk validasi skema data
+- **Axios**: Untuk melakukan HTTP requests ke backend
+- **Bootstrap Icons**: Untuk ikon UI
 
-## Expanding the ESLint configuration
+## setup
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- copy dulu `.env.example` ke `.env.example`
+```
+cp .env.example.com 
+```
+- sesuaikan url `apinya`
+```
+VITE_API_BASE_URL='http://localhost:3000/api'
+```
+- kemudian jalankan command `npm install`
+
+- tunggu selesai dulu
