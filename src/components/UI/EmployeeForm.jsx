@@ -169,7 +169,7 @@ const [avatar, setAvatar] = useState(null);
   
   try {
     if (isEditMode) {
-      await api.put(`/users/${initial.id}`, formData, {
+      await api.put(`/users/${initial.User.id}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
